@@ -4,3 +4,5 @@ prototype/test.wav
 prototype/Output.txt
 prototype/.idea/
 prototype/venv
+*.wav
+*.mp3
