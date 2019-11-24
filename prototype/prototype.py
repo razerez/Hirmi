@@ -11,9 +11,9 @@ cae_wav = "CAEwav.wav"
 
 
 def main():
-    cab_arr = mp3_to_wav(cab_mp3, cab_wav)
-    cae_arr = mp3_to_wav(cae_mp3, cae_wav)
-    print(cmp_sound_files(cab_arr, cae_arr))
+    cab_arr = mp3_to_wav(cab_mp3, cab_wav)  # transfer cab from mp3 to wav
+    cae_arr = mp3_to_wav(cae_mp3, cae_wav)  # transfer cae from mp3 to wav
+    print(cmp_sound_files(cab_arr, cae_arr))  # print delay between sound files
 
 
 def mp3_to_wav(src, dst):
@@ -24,8 +24,8 @@ def mp3_to_wav(src, dst):
     :return: a sound file object that represents the wav data
     """
     sound = AudioSegment.from_mp3(src)
-    sound.export(dst, format="wav")
-    data = sf.SoundFile(dst)
+    sound.export(dst, format="wav")  # mp3 to wav file
+    data = sf.SoundFile(dst)  # data is a soundfile object
     return data
 
 
@@ -36,22 +36,26 @@ def cmp_sound_files(sf1, sf2):
     :param sf2: sound file 2
     :return: delay time between sf1 and sf2
     """
+
+    sf1_arr = sf.read(sf1.name)
+    sf2_arr = sf.read(sf2.name)
     count = 0
-    for i in range(1, len(sf1)):
-        for j in range(1, len(sf2)):
-            if sf1.read(i) == sf2.read(j):
+    for i in range(1, len(sf1_arr[0])):  # run from start to end of soundfile
+        for j in range(1, len(sf2_arr[0])):  # run from start to end of soundfile
+            if sf1_arr[0][i] == sf2_arr[0][j]:  # if a match between a frame of the soundfiles has found
                 count += 1
-                i += 1
+                i += 1  # forward i by 1
             else:
-                count = 0
-            if count > 10:
-                sf2 = sf2[0:j]
+                count = 0  # if the streak was broken the match was a coincidence
+            if count > 10:  # after 10 matches we can be almost certain that this is not a coincidence
+                sf2_arr = sf2_arr[0:j]  # slice soundfile from start to j
                 break
-        if count > 10:
-            sf1 = sf1[0:i]
+        if count > 10:  # after 10 matches we can be almost certain that this is not a coincidence
+            sf1_arr = sf1_arr[0:i]  # slice soundfile from start to i
             break
-    return len(sf1) / sf1.samplerate - len(sf2) / sf2.samplerate
+    return len(sf1_arr[0]) / sf1.samplerate - len(sf2_arr[0]) / sf2.samplerate  # len / samplerate is the length
+                                                                                # in time units of the soundfile
 
 
 if __name__ == "__main__":
-    main()
+    main()  # call main
