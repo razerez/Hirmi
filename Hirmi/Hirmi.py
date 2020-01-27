@@ -3,7 +3,10 @@ from scipy.io.wavfile import write
 from playsound import playsound
 from scipy.io import wavfile
 from matplotlib import pyplot as plt
+from pydub import AudioSegment
+import numpy
 import threading
+
 
 # files:
 # CAB- Cut at beginning:
@@ -23,9 +26,10 @@ def main():
     # play the wav files audio
     #playsound(wav1)
     #playsound(wav2)
-
-    draw_wav(wav1)
-    draw_wav(wav2)
+    draw_wav(wav1, False)
+    draw_wav(wav1, True)
+    #draw_wav(wav2, False)
+    #draw_wav(wav2, True)
 
     # print delay between sound files:
 
@@ -36,10 +40,11 @@ def audio_to_wav(dst, device):
     :param device: which device to use
     :param dst: destination wav file
     """
+    DELAY = 1
     # Sample rate:
     fs = 44100
     # Duration of recording:
-    seconds = 3
+    seconds = DELAY + 1/1500
     # record:
     recording = sd.rec(int(seconds * fs), samplerate=fs, channels=2, device=device)
     print("recording: " + str(device))
@@ -47,36 +52,49 @@ def audio_to_wav(dst, device):
     sd.wait()
     # Save as WAV file:
     write(dst, fs, recording)
+    newAudio = AudioSegment.from_wav(dst)
+    newAudio = newAudio[DELAY*1000:]
+    newAudio.export(dst, format="wav")
 
 
-def draw_wav(file):
+def draw_wav(file, do):
     time_arr = []
-    samplerate, arr = wavfile.read(file)
-    size = arr.shape[0]
+    samplerate, sound = wavfile.read(file)
+    arr = separate_array(sound)
+    size = len(arr)
     time = size / samplerate
     frame_time = time / size
     i = 0
     while i != size:
         time_arr.append(i * frame_time)
-        print(time_arr[i])
         i += 1
-    #avg_arr(arr)
+    if do:
+        avg_arr(arr)
     plt.plot(time_arr, arr)
-    plt.xlabel("Time")
+    plt.title(file + " " + str(do))
     plt.ylabel("Sound")
+    plt.xlabel("Time")
+
     plt.show()
 
 
+def separate_array(arr):
+    ret = []
+    for i in range(0, arr.shape[0]):
+        ret.append(arr[i][1])
+    return ret
+
+
 def avg_arr(arr):
-    amount = 5
-    temp = 0
-    i = amount
-    while i != arr.shape[0]:
+    #  temp arr:
+    t_arr = arr[:]
+    amount = 20
+    i = amount - 1
+    while i != len(t_arr):
+        temp = 0
         for j in range(0, amount):
-            temp += (arr[i - j])
-        temp = temp[0]
-        print(arr[i][0])
-        arr[i][0] = temp / amount
+            temp += (t_arr[i - j])
+        arr[i] = temp / amount
         i += 1
 
 
