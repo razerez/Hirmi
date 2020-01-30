@@ -44,7 +44,7 @@ def audio_to_wav(dst, device):
     # Sample rate:
     fs = 44100
     # Duration of recording:
-    seconds = DELAY + 1/1500
+    seconds = DELAY + 1
     # record:
     recording = sd.rec(int(seconds * fs), samplerate=fs, channels=2, device=device)
     print("recording: " + str(device))
@@ -58,6 +58,11 @@ def audio_to_wav(dst, device):
 
 
 def draw_wav(file, do):
+    """
+    draw a graph of the audio in comparison to the time
+    :param file: path to wav file
+    :param do: var for testing avg_arr()
+    """
     time_arr = []
     samplerate, sound = wavfile.read(file)
     arr = separate_array(sound)
@@ -79,6 +84,11 @@ def draw_wav(file, do):
 
 
 def separate_array(arr):
+    """
+    separate pairs of array to arr[0] only
+    :param arr: array
+    :return: new array
+    """
     ret = []
     for i in range(0, arr.shape[0]):
         ret.append(arr[i][1])
@@ -86,9 +96,13 @@ def separate_array(arr):
 
 
 def avg_arr(arr):
+    """
+    moving average- make an average of each five elements of the array moving forword by one elemnt each time
+    :param arr:
+    """
     #  temp arr:
     t_arr = arr[:]
-    amount = 20
+    amount = 1000
     i = amount - 1
     while i != len(t_arr):
         temp = 0
