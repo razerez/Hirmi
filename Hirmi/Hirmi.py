@@ -97,8 +97,8 @@ def separate_array(arr):
 
 def avg_arr(arr):
     """
-    moving average- make an average of each five elements of the array moving forword by one elemnt each time
-    :param arr:
+    moving average- make an average of each five elements of the array moving forward by one element each time
+    :param arr: input array
     """
     #  temp arr:
     t_arr = arr[:]
