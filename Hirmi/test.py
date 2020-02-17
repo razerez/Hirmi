@@ -16,23 +16,31 @@ def main():
           62, 86, 88, 83, 89, 93, 19, 34, 96, 19, 7, 44, 20, 32, 42, 22, 49, 64, 87, 14, 96, 19, 31, 59, 86, 41, 23,
           26, 39, 97, 14, 79, 22, 79, 70, 2, 78, 48, 29, 9, 76, 36, 41, 48]
     a2 = [80, 50, 0, 30, 5]
-    subtract_arrays(a1, a2)
+
+    #print(subtract_arrays(a1, a2, 100))
+    print(a2[1:-1])
 
 
-def subtract_arrays(big_arr, small_arr):
+def subtract_arrays(big_arr, small_arr, samplerate):
+    match_arrays(big_arr, small_arr)
+    small_arr = numpy.array(small_arr, dtype=numpy.float64)
+    index = match_arrays(big_arr, small_arr)
+    return index/samplerate
+
+
+def match_arrays(big_arr, small_arr):
     """
     move SA(small_array) along BA(big_array) and subtract the values from each other, smallest difference means
     that the arrays are closer
     :param big_arr: array to move along
     :param small_arr: array to move on big array
-    :return:
+    :return: index of match in big array
     """
     _pow2_ = 2
     _take_ = 5
     _move_ = 1
     sub_sum = 0
     sub_sum_arr = numpy.array([], dtype=numpy.float64)
-    small_arr = numpy.array(small_arr, dtype=numpy.float64)
     for i in range(0, len(big_arr) - _take_, _move_):
         big_arr_slice = big_arr[i:i + _take_]
         small_arr_slice = small_arr[:]
@@ -42,7 +50,7 @@ def subtract_arrays(big_arr, small_arr):
         sub_sum_arr = numpy.append(sub_sum_arr, [sub_sum, i])
         sub_sum_arr = numpy.reshape(sub_sum_arr, (-1, 2))
         sub_sum = 0
-    print(sub_sum_arr[numpy.argmin(sub_sum_arr[:, 0])][1])
+    return sub_sum_arr[numpy.argmin(sub_sum_arr[:, 0])][1]
 
 
 def fix_arr(arr1, arr2):

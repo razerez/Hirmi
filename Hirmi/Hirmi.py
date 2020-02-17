@@ -13,25 +13,30 @@ import threading
 wav1 = "wav1.wav"
 # CAE - Cut at end:
 wav2 = "wav2.wav"
-amount = 1
+amount = 3
+_rec_time_ = 0.1
+_take_ = 0
 
 
 def main():
     # transfer record mics and transfer audio to wav:
-    t1 = threading.Thread(target=audio_to_wav, args=(wav1, 3, 10,))
-    t2 = threading.Thread(target=audio_to_wav, args=(wav2, 2, 10,))
+    t1 = threading.Thread(target=audio_to_wav, args=(wav1, 3, _rec_time_,))
+    t2 = threading.Thread(target=audio_to_wav, args=(wav2, 2, _rec_time_,))
     t1.start()
     t2.start()
     t1.join()
     t2.join()
+
     # play the wav files audio
-    # playsound(wav1)
-    # playsound(wav2)
-    arr1, smp1 = fix_arr(wav1, True)
+    #playsound(wav1)
+    #playsound(wav2)
+    arr1, smp1 = get_rounded_arr(wav1, True)
     draw_wav(arr1, smp1, "mic x6")
-    arr2, smp2 = fix_arr(wav2, True)
+    arr2, smp2 = get_rounded_arr(wav2, True)
     draw_wav(arr2, smp2, "mic x7")
-    compare_extreme_points(arr1, smp1, arr2, smp2)
+    trim_arr(arr2, _rec_time_/3, smp2)
+    print(subtract_arrays(arr1, arr2, smp1))
+
     # print delay between sound files:
 
 
@@ -72,12 +77,48 @@ def audio_to_wav(dst, device, duration):
     new_audio.export(dst, format="wav")
 
 
-def fix_arr(file, avg):
+def get_rounded_arr(file, avg):
     samplerate, sound = wavfile.read(file)
     arr = numpy.array(separate_array(sound), dtype=numpy.float64)
     if avg:
-        avg_arr(arr)
+        round_arr(arr)
     return arr, samplerate
+
+
+def round_arr(arr):
+    """
+    moving average- make an average of each five elements of the array moving forward by one element each time
+    :param arr: input array
+    """
+    #  temp arr:
+    t_arr = arr[:]
+    i = amount - 1
+    while i != len(t_arr):
+        temp = 0
+        for j in range(0, amount):
+            temp += (t_arr[i - j])
+        arr[i] = temp / amount
+        i += 1
+
+
+def trim_arr(arr, trim_time, samplerate):
+    global _take_
+    start = int(time_to_index(trim_time, samplerate))
+    end = -start
+    _take_ = start
+    return arr[start:end]
+
+
+def separate_array(arr):
+    """
+    separate pairs of array to arr[0] only
+    :param arr: array
+    :return: new array
+    """
+    ret = []
+    for i in range(0, arr.shape[0]):
+        ret.append(arr[i][1])
+    return ret
 
 
 def draw_wav(arr, samplerate, name="enter name"):
@@ -109,54 +150,54 @@ def get_time_arr(arr, samplerate):
     return time_arr
 
 
-def subtract_arrays(big_arr, small_arr):
+def subtract_arrays(big_arr, small_arr, small_arr_samplerate):
+    match_arrays(big_arr, small_arr)
+    small_arr = numpy.array(small_arr, dtype=numpy.float64)
+    index = match_arrays(big_arr, small_arr)
+    return index_to_time(index, small_arr_samplerate)
+
+
+def time_to_index(time, samplerate):
+    return time * samplerate
+
+
+def index_to_time(index, samplerate):
+    return index/samplerate
+
+
+def match_arrays(big_arr, small_arr):
     """
     move SA(small_array) along BA(big_array) and subtract the values from each other, smallest difference means
     that the arrays are closer
     :param big_arr: array to move along
     :param small_arr: array to move on big array
-    :return:
+    :return: index of match in big array
     """
     _pow2_ = 2
-    _take_ = 10
+    _move_ = 1
     sub_sum = 0
     sub_sum_arr = numpy.array([], dtype=numpy.float64)
-    small_arr_slice = small_arr[:_take_]
-    for i in range(0, len(big_arr) - 10, _take_):
+    for i in range(0, len(big_arr) - _take_, _move_):
+        big_arr_slice = big_arr[i:i + _take_]
+        small_arr_slice = small_arr[:]
+        fix_arr(big_arr_slice, small_arr_slice)
         for j in range(0, _take_):
-            sub_sum += pow(big_arr[i + j] - small_arr_slice[j], _pow2_)
-        sub_sum_arr = numpy.append(sub_sum_arr, sub_sum)
+            sub_sum += pow(big_arr_slice[j] - small_arr_slice[j], _pow2_)
+        sub_sum_arr = numpy.append(sub_sum_arr, [sub_sum, i])
+        sub_sum_arr = numpy.reshape(sub_sum_arr, (-1, 2))
         sub_sum = 0
+    return sub_sum_arr[numpy.argmin(sub_sum_arr[:, 0])][1]
 
-    return numpy.where(sub_sum_arr == min(sub_sum_arr))[0][0]
 
-
-def separate_array(arr):
-    """
-    separate pairs of array to arr[0] only
-    :param arr: array
-    :return: new array
-    """
-    ret = []
-    for i in range(0, arr.shape[0]):
-        ret.append(arr[i][1])
-    return ret
+def fix_arr(arr1, arr2):
+    sub = int(avg_arr(arr1) - avg_arr(arr2))
+    for i in range(0, len(arr2)):
+        arr2[i] += sub
+    return arr2
 
 
 def avg_arr(arr):
-    """
-    moving average- make an average of each five elements of the array moving forward by one element each time
-    :param arr: input array
-    """
-    #  temp arr:
-    t_arr = arr[:]
-    i = amount - 1
-    while i != len(t_arr):
-        temp = 0
-        for j in range(0, amount):
-            temp += (t_arr[i - j])
-        arr[i] = temp / amount
-        i += 1
+    return sum(arr) / len(arr)
 
 
 if __name__ == "__main__":
