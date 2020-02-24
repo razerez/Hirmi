@@ -13,38 +13,58 @@ import threading
 wav1 = "wav1.wav"
 # CAE - Cut at end:
 wav2 = "wav2.wav"
+amount = 3
+_rec_time_ = 0.1
+_take_ = 0
 
 
 def main():
     # transfer record mics and transfer audio to wav:
-    t1 = threading.Thread(target=audio_to_wav, args=(wav1, 2,))
-    t2 = threading.Thread(target=audio_to_wav, args=(wav2, 1,))
+    t1 = threading.Thread(target=audio_to_wav, args=(wav1, 3, _rec_time_,))
+    t2 = threading.Thread(target=audio_to_wav, args=(wav2, 2, _rec_time_,))
     t1.start()
     t2.start()
     t1.join()
     t2.join()
+
     # play the wav files audio
     #playsound(wav1)
     #playsound(wav2)
-    draw_wav(wav1, False)
-    draw_wav(wav1, True)
-    #draw_wav(wav2, False)
-    #draw_wav(wav2, True)
+    arr1, smp1 = get_rounded_arr(wav1, True)
+    draw_wav(arr1, smp1, "mic x6")
+    arr2, smp2 = get_rounded_arr(wav2, True)
+    draw_wav(arr2, smp2, "mic x7")
+    trim_arr(arr2, _rec_time_/3, smp2)
+    print(subtract_arrays(arr1, arr2, smp1))
 
     # print delay between sound files:
 
 
-def audio_to_wav(dst, device):
+def compare_extreme_points(arr1, smp1, arr2, smp2):
+    exp1 = get_extreme_time(arr1, smp1)
+    exp2 = get_extreme_time(arr2, smp2)
+    time_gap = abs(exp1 - exp2)
+    print(time_gap)
+
+
+def get_extreme_time(arr, smp):
+    time_arr = get_time_arr(arr, smp)
+    min_index = numpy.where(arr == min(arr))[0][0]
+    return time_arr[min_index]
+
+
+def audio_to_wav(dst, device, duration):
     """
     converts live audio file to wav file and return sound array
+    :param duration: duration of recording
     :param device: which device to use
     :param dst: destination wav file
     """
-    DELAY = 1
+    _delay_ = 0
     # Sample rate:
     fs = 44100
     # Duration of recording:
-    seconds = DELAY + 1/1500
+    seconds = _delay_ + duration
     # record:
     recording = sd.rec(int(seconds * fs), samplerate=fs, channels=2, device=device)
     print("recording: " + str(device))
@@ -52,43 +72,26 @@ def audio_to_wav(dst, device):
     sd.wait()
     # Save as WAV file:
     write(dst, fs, recording)
-    newAudio = AudioSegment.from_wav(dst)
-    newAudio = newAudio[DELAY*1000:]
-    newAudio.export(dst, format="wav")
+    new_audio = AudioSegment.from_wav(dst)
+    new_audio = new_audio[_delay_*1000:]
+    new_audio.export(dst, format="wav")
 
 
-def draw_wav(file, do):
-    time_arr = []
+def get_rounded_arr(file, avg):
     samplerate, sound = wavfile.read(file)
-    arr = separate_array(sound)
-    size = len(arr)
-    time = size / samplerate
-    frame_time = time / size
-    i = 0
-    while i != size:
-        time_arr.append(i * frame_time)
-        i += 1
-    if do:
-        avg_arr(arr)
-    plt.plot(time_arr, arr)
-    plt.title(file + " " + str(do))
-    plt.ylabel("Sound")
-    plt.xlabel("Time")
-
-    plt.show()
+    arr = numpy.array(separate_array(sound), dtype=numpy.float64)
+    if avg:
+        round_arr(arr)
+    return arr, samplerate
 
 
-def separate_array(arr):
-    ret = []
-    for i in range(0, arr.shape[0]):
-        ret.append(arr[i][1])
-    return ret
-
-
-def avg_arr(arr):
+def round_arr(arr):
+    """
+    moving average- make an average of each five elements of the array moving forward by one element each time
+    :param arr: input array
+    """
     #  temp arr:
     t_arr = arr[:]
-    amount = 20
     i = amount - 1
     while i != len(t_arr):
         temp = 0
@@ -96,6 +99,105 @@ def avg_arr(arr):
             temp += (t_arr[i - j])
         arr[i] = temp / amount
         i += 1
+
+
+def trim_arr(arr, trim_time, samplerate):
+    global _take_
+    start = int(time_to_index(trim_time, samplerate))
+    end = -start
+    _take_ = start
+    return arr[start:end]
+
+
+def separate_array(arr):
+    """
+    separate pairs of array to arr[0] only
+    :param arr: array
+    :return: new array
+    """
+    ret = []
+    for i in range(0, arr.shape[0]):
+        ret.append(arr[i][1])
+    return ret
+
+
+def draw_wav(arr, samplerate, name="enter name"):
+    """
+    draw a graph of the audio in comparison to the time
+    :param name: name to write on the graph
+    :param samplerate: sample rate of the sound file
+    :param arr: array to draw
+    """
+    time_arr = get_time_arr(arr, samplerate)
+    plt.plot(time_arr, arr)
+    plt.title(name)
+    plt.ylabel("Sound")
+    plt.xlabel("Time")
+
+    plt.show()
+    return arr
+
+
+def get_time_arr(arr, samplerate):
+    time_arr = []
+    size = len(arr)
+    time = size / samplerate
+    frame_time = time / size
+    i = 0
+    while i != size:
+        time_arr.append(i * frame_time)
+        i += 1
+    return time_arr
+
+
+def subtract_arrays(big_arr, small_arr, small_arr_samplerate):
+    match_arrays(big_arr, small_arr)
+    small_arr = numpy.array(small_arr, dtype=numpy.float64)
+    index = match_arrays(big_arr, small_arr)
+    return index_to_time(index, small_arr_samplerate)
+
+
+def time_to_index(time, samplerate):
+    return time * samplerate
+
+
+def index_to_time(index, samplerate):
+    return index/samplerate
+
+
+def match_arrays(big_arr, small_arr):
+    """
+    move SA(small_array) along BA(big_array) and subtract the values from each other, smallest difference means
+    that the arrays are closer
+    :param big_arr: array to move along
+    :param small_arr: array to move on big array
+    :return: index of match in big array
+    """
+    _pow2_ = 2
+    _move_ = 1
+    sub_sum = 0
+    sub_sum_arr = numpy.array([], dtype=numpy.float64)
+    for i in range(0, len(big_arr) - _take_, _move_):
+        big_arr_slice = big_arr[i:i + _take_]
+        small_arr_slice = small_arr[:]
+        fix_arr(big_arr_slice, small_arr_slice)
+        for j in range(0, _take_):
+            sub_sum += pow(big_arr_slice[j] - small_arr_slice[j], _pow2_)
+        sub_sum_arr = numpy.append(sub_sum_arr, [sub_sum, i])
+        sub_sum_arr = numpy.reshape(sub_sum_arr, (-1, 2))
+        sub_sum = 0
+    return sub_sum_arr[numpy.argmin(sub_sum_arr[:, 0])][1]
+
+
+def fix_arr(arr1, arr2):
+    sub = int(avg_arr(arr1) - avg_arr(arr2))
+    for i in range(0, len(arr2)):
+        arr2[i] += sub
+    return arr2
+
+
+def avg_arr(arr):
+    return sum(arr) / len(arr)
 
 
 if __name__ == "__main__":
