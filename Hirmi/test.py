@@ -17,8 +17,8 @@ def main():
           26, 39, 97, 14, 79, 22, 79, 70, 2, 78, 48, 29, 9, 76, 36, 41, 48]
     a2 = [80, 50, 0, 30, 5]
 
-    #print(subtract_arrays(a1, a2, 100))
-    print(a2[1:-1])
+    print(subtract_arrays(a1, a2, 1))
+    # print(a2[1:-1])
 
 
 def subtract_arrays(big_arr, small_arr, samplerate):
@@ -26,6 +26,7 @@ def subtract_arrays(big_arr, small_arr, samplerate):
     small_arr = numpy.array(small_arr, dtype=numpy.float64)
     index = match_arrays(big_arr, small_arr)
     return index/samplerate
+
 
 
 def match_arrays(big_arr, small_arr):
@@ -64,6 +65,35 @@ def fix_arr(arr1, arr2):
 def avg_arr(arr):
     return sum(arr) / len(arr)
 
+
+def culc_ratio(arr1, arr2):
+    """
+    :param arr1: an audio array
+    :param arr2: an audio array
+    :return:  the smaller array with multiplied values
+    """
+    #culc the sum of each array to define which is bigger
+    sum1 = sum(arr1)
+    sum2 = sum(arr2)
+
+    if sum1 > sum2:
+        #the ratio of the arrays
+        ratio = sum1 / sum2
+        temp_arr = arr2[:]
+
+        #multiply the smaller array to get they both similar
+        for i in range(0, len(arr2)):
+            temp_arr[i] *= ratio
+    else:
+        # the ratio of the arrays
+        ratio = sum2 / sum1
+        temp_arr = arr1[:]
+
+        # multiply the smaller array to get they both similar
+        for i in range(0, len(arr1)):
+            temp_arr[i] *= ratio
+
+    return temp_arr
 
 if __name__ == "__main__":
     # call main:
