@@ -13,14 +13,14 @@ import threading
 wav1 = "wav1.wav"
 # CAE - Cut at end:
 wav2 = "wav2.wav"
-amount = 3
+amount = 10
 _rec_time_ = 0.1
 _take_ = 0
 
 
 def main():
     # transfer record mics and transfer audio to wav:
-    t1 = threading.Thread(target=audio_to_wav, args=(wav1, 3, _rec_time_,))
+    t1 = threading.Thread(target=audio_to_wav, args=(wav1, 1, _rec_time_,))
     t2 = threading.Thread(target=audio_to_wav, args=(wav2, 2, _rec_time_,))
     t1.start()
     t2.start()
@@ -28,11 +28,19 @@ def main():
     t2.join()
 
     # play the wav files audio
-    #playsound(wav1)
-    #playsound(wav2)
-    arr1, smp1 = get_rounded_arr(wav1, True)
+    # playsound(wav1)
+    # playsound(wav2)
+
+    arr1, smp1 = wav_to_arr(wav1)
+    arr2, smp2 = wav_to_arr(wav2)
+
+    fix_ratio(arr1, arr2)
+    fix_ratio(arr2, arr1)
+
+
+    get_rounded_arr(arr1)
     draw_wav(arr1, smp1, "mic x6")
-    arr2, smp2 = get_rounded_arr(wav2, True)
+    get_rounded_arr(arr2)
     draw_wav(arr2, smp2, "mic x7")
     trim_arr(arr2, _rec_time_/3, smp2)
     print(subtract_arrays(arr1, arr2, smp1))
@@ -77,12 +85,40 @@ def audio_to_wav(dst, device, duration):
     new_audio.export(dst, format="wav")
 
 
-def get_rounded_arr(file, avg):
+def fix_ratio(arr1, arr2):
+    """
+    :param arr1: an audio array
+    :param arr2: an audio array
+    :return:  the smaller array with multiplied values
+    """
+    # calc the sum of each array to define which is bigger
+    sum1 = sum(arr1)
+    sum2 = sum(arr2)
+
+    if sum1 > sum2:
+        # the ratio of the arrays
+        ratio = sum1 / sum2
+
+        # multiply the smaller array to get they both similar
+        for i in range(0, len(arr2)):
+            arr2[i] *= ratio
+    else:
+        # the ratio of the arrays
+        ratio = sum2 / sum1
+
+        # multiply the smaller array to get they both similar
+        for i in range(0, len(arr1)):
+           arr1[i] *= ratio
+
+
+def wav_to_arr(file):
     samplerate, sound = wavfile.read(file)
     arr = numpy.array(separate_array(sound), dtype=numpy.float64)
-    if avg:
-        round_arr(arr)
     return arr, samplerate
+
+
+def get_rounded_arr(arr):
+    round_arr(arr)
 
 
 def round_arr(arr):
