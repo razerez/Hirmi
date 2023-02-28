@@ -1,0 +1,78 @@
+[33mcommit 4d378e7ae0329f7bc49f211d8bbb0be982eed2af[m[33m ([m[1;36mHEAD[m[33m)[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Mon Dec 2 18:30:52 2019 +0200
+
+    prototype finished
+
+[33mcommit 28c35addb8e8ae99d4cdce400900c055e4afbe93[m
+Author: Ben Levitin <benhagadol@gmail.com>
+Date:   Sun Dec 1 16:18:01 2019 +0000
+
+    algorithm changed
+
+[33mcommit 06b586754d01524c380160bfc41e5329f498740f[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Sun Dec 1 16:40:13 2019 +0200
+
+    added sound
+
+[33mcommit 5302febf4d3c5468b00e410c4091ba43ebadfe57[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Mon Nov 25 19:18:47 2019 +0200
+
+    code ready, not efficient, commnts are messed up
+
+[33mcommit 03636b35b68f3d603fa9cdba8d3d95a6e4452eec[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Sun Nov 24 14:51:36 2019 +0200
+
+    using sf and numpy
+
+[33mcommit ba51eaa4ce51c4254380bbe1f7c0eb0ea97a1644[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Thu Nov 21 00:44:04 2019 +0200
+
+    WOP: prototype almost finished
+
+[33mcommit 8337cbf33cfa6074336292361f96940e8e84c615[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Wed Nov 20 20:38:18 2019 +0200
+
+    prototype with sampling
+
+[33mcommit 84db2cc46c46faf5bbe6a7a02bae8ca1a287c9eb[m[33m ([m[1;31morigin/master[m[33m)[m
+Merge: 992ff80 bb53d5c
+Author: raz erez <razerez12@gmail.com>
+Date:   Mon Nov 18 13:23:17 2019 +0200
+
+    Merge branch 'architecture'
+
+[33mcommit bb53d5c4c1df0fe90989f11c95113af5b32c78ab[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Mon Nov 18 13:14:52 2019 +0200
+
+    update drawio
+
+[33mcommit fe5e9b756b9375a5e780ca76131b49a88a2d6854[m
+Author: BenLevitin <benhagadol@gmail.com>
+Date:   Sun Nov 10 16:40:59 2019 +0200
+
+    main tech
+
+[33mcommit 456ec2fdb1e4c202dcf521878ab1038ad985f56a[m
+Author: BenLevitin <benhagadol@gmail.com>
+Date:   Sun Nov 10 16:39:43 2019 +0200
+
+    main tech
+
+[33mcommit eddff76faa2a05e5d46e1c4d730d1df95884c92f[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Sun Nov 10 16:18:09 2019 +0200
+
+    space look
+
+[33mcommit 992ff80a429d5b2bfe8434e4dc4fc058a9517d5b[m
+Author: raz erez <razerez12@gmail.com>
+Date:   Sun Nov 10 16:14:36 2019 +0200
+
+    Initial commit
