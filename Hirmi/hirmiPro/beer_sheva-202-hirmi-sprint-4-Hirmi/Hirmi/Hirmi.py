@@ -1,3 +1,4 @@
+import librosa
 import sounddevice as sd
 from scipy.io.wavfile import write
 from playsound import playsound
@@ -6,9 +7,7 @@ from matplotlib import pyplot as plt
 from pydub import AudioSegment
 import numpy
 import threading
-import subprocess
-import time
-
+import plotly.graph_objects as go
 
 # files:
 # CAB- Cut at beginning:
@@ -16,87 +15,68 @@ wav1 = "wav1.wav"
 # CAE - Cut at end:
 wav2 = "wav2.wav"
 amount = 10
-_rec_time_ = 0.03
+_rec_time_ = 3
 _take_ = 0
-error_counter = 10
-driver = 0
-not_driver = 0
+_chanks_ = 22050
 
 
 def main():
     # transfer record mics and transfer audio to wav:
-    global error_counter
-    while True:
-        error_counter = 10
-
-        while error_counter > 0:
-            try:
-                t1 = threading.Thread(target=audio_to_wav, args=(wav1, 1, _rec_time_,))
-                t2 = threading.Thread(target=audio_to_wav, args=(wav2, 2, _rec_time_,))
-                t1.start()
-                t2.start()
-                t1.join()
-                t2.join()
-            except():
-                print("REC error")
-                error_counter += 1
-            t3 = threading.Thread(target=tread_tst, daemon=True)
-            t3.start()
-
-            error_counter -= 1
-        t3.join()
-
-        try:
-            global driver
-            global not_driver
-
-            if driver > not_driver:
-                print("Driver is speaking (" + str(driver * 10) + "% accuracy) ")
-                set_vol()
-            elif driver < not_driver:
-                print("Not driver (" + str(driver * 10) + "% accuracy) ")
-            else:
-                 print("inaccurate")
-            driver = 0
-            not_driver = 0
-
-        except ZeroDivisionError:
-            print("P error")
+    t1 = threading.Thread(target=audio_to_wav, args=(wav1, 1, _rec_time_,))
+    t2 = threading.Thread(target=audio_to_wav, args=(wav2, 2, _rec_time_,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
 
     # play the wav files audio
     # playsound(wav1)
     # playsound(wav2)
+    arr1, smp1 = wav_to_arr(wav1)
+    arr2, smp2 = wav_to_arr(wav2)
 
-def tread_tst():
-    global error_counter
-    try:
-        arr1, smp1 = wav_to_arr(wav1)
-        arr2, smp2 = wav_to_arr(wav2)
 
-        arr1 = abs(arr1)
-        arr2 = abs(arr2)
+    arr1 = abs(arr1)
+    arr2 = abs(arr2)
+    draw_wav(arr1, smp1, "mic x6")
+    draw_wav(arr2, smp2, "mic x7")
+    arr1 = chunkIt(arr1, _chanks_)
+    arr2 = chunkIt(arr2, _chanks_)
+    numpy.nan_to_num(arr1)
+    numpy.nan_to_num(arr2)
+    for i in range(0, len(arr1)):
+       arr1[i],arr2[i] = fix_ratio(arr1[i],arr2[i])
 
-        fix_ratio(arr1, arr2)
-        fix_ratio(arr2, arr1)
+    for i in range(1, len(arr1)):
+        arr1[0] = numpy.concatenate([arr1[0],arr1[i]],axis=0)
+    for i in range(1, len(arr2)):
+        arr2[0] = numpy.concatenate([arr2[0],arr2[i]], axis=0)
 
-        get_rounded_arr(arr1)
-        # draw_wav(arr1, smp1, "Melikson")
-        get_rounded_arr(arr2)
-        # draw_wav(arr2, smp2, "Barda")
-        trim_arr(arr2, _rec_time_ / 3, smp2)
-        sb = subtract_arrays(arr1, arr2, smp1)
-        if sb < 0.01:
-            print("Driver")
-            global driver
-            driver += 1
-        else:
-            global  not_driver
-            not_driver += 1
-            print("Not Driver")
-    except:
-        print("Calc Error")
-        error_counter += 1
 
+    arr3 = arr1[0]
+    arr4 = arr2[0]
+    draw_wav(arr3, smp1, "mic x6")
+    draw_wav(arr4, smp2, "mic x7")
+   #get_rounded_arr(arr1)
+   #get_rounded_arr(arr2)
+
+
+
+    #trim_arr(arr2, _rec_time_/3, smp2)
+    #print(subtract_arrays(arr1, arr2, smp1))
+
+    # print delay between sound files:
+
+def chunkIt(seq, num):
+    avg = len(seq) / float(num)
+    out = []
+    last = 0.0
+
+    while last < len(seq):
+        out.append(seq[int(last):int(last + num)])
+        last += num
+
+    return out
 
 def compare_extreme_points(arr1, smp1, arr2, smp2):
     exp1 = get_extreme_time(arr1, smp1)
@@ -125,7 +105,7 @@ def audio_to_wav(dst, device, duration):
     seconds = _delay_ + duration
     # record:
     recording = sd.rec(int(seconds * fs), samplerate=fs, channels=2, device=device)
-    # print("recording: " + str(device))
+    print("recording: " + str(device))
     # Wait until recording is finished:
     sd.wait()
     # Save as WAV file:
@@ -142,24 +122,18 @@ def fix_ratio(arr1, arr2):
     :return:  the smaller array with multiplied values
     """
     # calc the sum of each array to define which is bigger
-    sum1 = sum(arr1)
-    sum2 = sum(arr2)
+   # sum1 = sum(arr1)
+    #sum2 = sum(arr2)
+    sum1 = max(arr1)
+    sum2 = max(arr2)
 
-    if sum1 > sum2:
-        # the ratio of the arrays
-        ratio = sum1 / sum2
 
-        # multiply the smaller array to get they both similar
-        for i in range(0, len(arr2)):
-            arr2[i] *= ratio
-    else:
-        # the ratio of the arrays
-        ratio = sum2 / sum1
+    if sum2 != 0:
+         ratio = sum1 / sum2
+         arr2 = arr2 * ratio
+         print(ratio)
 
-    # multiply the smaller array to get they both similar
-    for i in range(0, len(arr1)):
-        arr1[i] *= ratio
-
+    return arr1,arr2
 
 def wav_to_arr(file):
     samplerate, sound = wavfile.read(file)
@@ -237,6 +211,7 @@ def get_time_arr(arr, samplerate):
 
 
 def subtract_arrays(big_arr, small_arr, small_arr_samplerate):
+    match_arrays(big_arr, small_arr)
     small_arr = numpy.array(small_arr, dtype=numpy.float64)
     index = match_arrays(big_arr, small_arr)
     return index_to_time(index, small_arr_samplerate)
@@ -262,7 +237,6 @@ def match_arrays(big_arr, small_arr):
     _move_ = 1
     sub_sum = 0
     sub_sum_arr = numpy.array([], dtype=numpy.float64)
-    print("match")
     for i in range(0, len(big_arr) - _take_, _move_):
         big_arr_slice = big_arr[i:i + _take_]
         small_arr_slice = small_arr[:]
@@ -272,8 +246,6 @@ def match_arrays(big_arr, small_arr):
         sub_sum_arr = numpy.append(sub_sum_arr, [sub_sum, i])
         sub_sum_arr = numpy.reshape(sub_sum_arr, (-1, 2))
         sub_sum = 0
-    print("match finished")
-
     return sub_sum_arr[numpy.argmin(sub_sum_arr[:, 0])][1]
 
 
@@ -286,17 +258,6 @@ def fix_arr(arr1, arr2):
 
 def avg_arr(arr):
     return sum(arr) / len(arr)
-
-
-def set_vol():
-    """
-    This function is setting the audio level to 30% and then change it back to 100%
-    :return: None
-    """
-    # using Nircmd in order to make the cmd command, ypu need to install it
-    subprocess.Popen('cmd /k "nircmd.exe setsysvolume 19661" ')
-    time.sleep(3)
-    subprocess.Popen('cmd /k "nircmd.exe setsysvolume 65535"')
 
 
 if __name__ == "__main__":
